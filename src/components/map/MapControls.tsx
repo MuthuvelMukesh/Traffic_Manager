@@ -9,6 +9,8 @@ interface MapControlsProps {
   onSearchSelect: (intersection: Intersection) => void;
   statusFilter: string;
   onStatusFilterChange: (status: string) => void;
+  zoneFilter: string;
+  onZoneFilterChange: (zone: string) => void;
   layers: { trafficDensity: boolean; cameraCoverage: boolean; emergencyRoutes: boolean };
   onLayerToggle: (layer: string) => void;
 }
@@ -18,6 +20,8 @@ export default function MapControls({
   onSearchSelect,
   statusFilter,
   onStatusFilterChange,
+  zoneFilter,
+  onZoneFilterChange,
   layers,
   onLayerToggle,
 }: MapControlsProps) {
@@ -28,6 +32,9 @@ export default function MapControls({
   const searchRef = useRef<HTMLDivElement>(null);
   const layerRef = useRef<HTMLDivElement>(null);
   const filterRef = useRef<HTMLDivElement>(null);
+
+  // Derive available zones from intersection data
+  const zones = ["all", ...Array.from(new Set(intersections.map((i) => i.zone)))];
 
   const filteredResults = searchQuery.trim()
     ? intersections.filter(
@@ -117,6 +124,19 @@ export default function MapControls({
           </div>
         )}
       </div>
+
+      {/* Zone filter */}
+      <select
+        value={zoneFilter}
+        onChange={(e) => onZoneFilterChange(e.target.value)}
+        className="rounded-xl bg-white/[0.04] border border-white/[0.08] py-2.5 pl-3 pr-8 text-sm text-gray-300 focus:border-brand-400/50 focus:outline-none hover:bg-white/[0.06] transition-colors"
+      >
+        {zones.map((z) => (
+          <option key={z} value={z} className="bg-surface-100">
+            {z === "all" ? "All Zones" : z}
+          </option>
+        ))}
+      </select>
 
       {/* Layer dropdown */}
       <div ref={layerRef} className="relative">

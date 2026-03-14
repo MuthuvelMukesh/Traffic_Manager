@@ -13,15 +13,19 @@ import {
   ChevronLeft,
   ChevronRight,
   Wifi,
+  AlertTriangle,
+  TrafficCone,
 } from "lucide-react";
 
 const navItems = [
-  { label: "Dashboard", href: "/", icon: LayoutDashboard },
-  { label: "Live Map", href: "/map", icon: Map },
-  { label: "Intersections", href: "/intersections", icon: GitBranch },
-  { label: "Analytics", href: "/analytics", icon: BarChart3 },
-  { label: "Emergency", href: "/emergency", icon: Siren },
-  { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Dashboard",       href: "/",           icon: LayoutDashboard },
+  { label: "Live Map",        href: "/map",         icon: Map },
+  { label: "Intersections",   href: "/intersections",icon: GitBranch },
+  { label: "Signal Control",  href: "/signals",     icon: TrafficCone },
+  { label: "Analytics",       href: "/analytics",   icon: BarChart3 },
+  { label: "Emergency",       href: "/emergency",   icon: Siren },
+  { label: "Incidents",       href: "/incidents",   icon: AlertTriangle },
+  { label: "Settings",        href: "/settings",    icon: Settings },
 ];
 
 interface SidebarProps {

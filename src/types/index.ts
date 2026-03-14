@@ -177,3 +177,61 @@ export interface KPI {
   status: "good" | "warning" | "critical";
   icon: string;
 }
+
+// ============================================================
+// Incident Reporting
+// ============================================================
+
+export type IncidentType =
+  | "accident"
+  | "roadwork"
+  | "flooding"
+  | "signal_failure"
+  | "debris"
+  | "crowd"
+  | "other";
+
+export type IncidentStatus = "open" | "in_progress" | "resolved" | "closed";
+
+export type IncidentSeverity = "low" | "medium" | "high" | "critical";
+
+export interface Incident {
+  id: string;
+  type: IncidentType;
+  title: string;
+  description: string;
+  location: string;
+  intersectionId?: string;
+  lat?: number;
+  lng?: number;
+  status: IncidentStatus;
+  severity: IncidentSeverity;
+  reportedBy: string;
+  assignedTo?: string;
+  timestamp: Date;
+  resolvedAt?: Date;
+  estimatedClearTime?: number; // minutes
+  affectedLanes?: number;
+  tags?: string[];
+}
+
+// ============================================================
+// Predictive Analytics
+// ============================================================
+
+export interface PredictiveDataPoint {
+  hour: string;
+  predicted: number;
+  actual?: number;
+  upperBound: number;
+  lowerBound: number;
+  confidence: number; // 0-100
+}
+
+export interface ZoneTrafficData {
+  zone: string;
+  current: number;
+  previous: number;
+  efficiency: number;
+  avgWait: number;
+}

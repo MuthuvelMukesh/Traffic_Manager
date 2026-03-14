@@ -6,15 +6,46 @@ import MetricCard from "@/components/analytics/MetricCard";
 import TrafficVolumeByHour from "@/components/analytics/TrafficVolumeByHour";
 import TopIntersections from "@/components/analytics/TopIntersections";
 import EnvironmentalSummary from "@/components/analytics/EnvironmentalSummary";
-import { Download, BarChart3, Activity, Zap, Leaf } from "lucide-react";
-import { cn } from "@/lib/utils";
+import PredictiveChart from "@/components/analytics/PredictiveChart";
+import ZoneComparison from "@/components/analytics/ZoneComparison";
+import { Download, BarChart3, Activity, Zap, Leaf, Brain, Map } from "lucide-react";
+import { cn, exportToCSV } from "@/lib/utils";
+import { predictiveTraffic } from "@/data/predictiveTraffic";
+import { trafficVolume } from "@/data/trafficVolume";
 
 const analyticsTabs = [
-  { id: "overview", label: "Overview", icon: <BarChart3 className="h-4 w-4" /> },
-  { id: "traffic", label: "Traffic Flow", icon: <Activity className="h-4 w-4" /> },
-  { id: "performance", label: "Performance", icon: <Zap className="h-4 w-4" /> },
-  { id: "environmental", label: "Environmental", icon: <Leaf className="h-4 w-4" /> },
+  { id: "overview",     label: "Overview",     icon: <BarChart3 className="h-4 w-4" /> },
+  { id: "traffic",      label: "Traffic Flow",  icon: <Activity className="h-4 w-4" /> },
+  { id: "performance",  label: "Performance",   icon: <Zap className="h-4 w-4" /> },
+  { id: "environmental",label: "Environmental", icon: <Leaf className="h-4 w-4" /> },
+  { id: "predictive",   label: "Predictions",   icon: <Brain className="h-4 w-4" /> },
+  { id: "zones",        label: "Zone Stats",    icon: <Map className="h-4 w-4" /> },
 ];
+
+function handleExport(activeTab: string) {
+  if (activeTab === "predictive") {
+    exportToCSV(
+      predictiveTraffic.map((p) => ({
+        Hour: p.hour,
+        Actual: p.actual ?? "",
+        Predicted: p.predicted,
+        "Upper Bound": p.upperBound,
+        "Lower Bound": p.lowerBound,
+        "Confidence %": p.confidence,
+      })),
+      "traffic-predictions.csv"
+    );
+  } else {
+    exportToCSV(
+      trafficVolume.map((v) => ({
+        Hour: v.hour,
+        Volume: v.volume,
+        "Previous Volume": v.previousVolume ?? "",
+      })),
+      "traffic-volume.csv"
+    );
+  }
+}
 
 const congestedIntersections = [
   { name: "5th Ave & 42nd St", avgWaitTime: 68, trend: 12 },
@@ -47,9 +78,12 @@ export default function AnalyticsPage() {
             System performance metrics and traffic analysis
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-white/[0.06] hover:text-gray-200 transition-all duration-200">
+        <button
+          onClick={() => handleExport(activeTab)}
+          className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-white/[0.06] hover:text-gray-200 transition-all duration-200"
+        >
           <Download className="h-4 w-4" />
-          Export Report
+          Export CSV
         </button>
       </div>
 
@@ -212,6 +246,61 @@ export default function AnalyticsPage() {
               trend={11}
               trendDirection="up"
               trendPositive={true}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === "predictive" && (
+        <div className="space-y-6">
+          <div className="glass rounded-2xl border border-purple-500/20 bg-purple-500/[0.04] p-4">
+            <p className="text-sm text-purple-300">
+              <span className="font-semibold">AI-powered forecast</span> — predictions are generated
+              by the traffic optimization model using historical patterns, scheduled events, and
+              real-time sensor data. Confidence decreases for hours further from now.
+            </p>
+          </div>
+          <PredictiveChart />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <MetricCard
+              label="Peak Predicted Volume"
+              value="15,800"
+              unit="vehicles"
+              trend={6}
+              trendDirection="up"
+              trendPositive={true}
+            />
+            <MetricCard
+              label="Avg Prediction Confidence"
+              value="84"
+              unit="%"
+              trend={2}
+              trendDirection="up"
+              trendPositive={true}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === "zones" && (
+        <div className="space-y-6">
+          <ZoneComparison />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            <MetricCard
+              label="Best Performing Zone"
+              value="East Side"
+              unit="91% efficiency"
+              trend={3}
+              trendDirection="up"
+              trendPositive={true}
+            />
+            <MetricCard
+              label="Most Congested Zone"
+              value="Midtown"
+              unit="79% efficiency"
+              trend={4}
+              trendDirection="down"
+              trendPositive={false}
             />
           </div>
         </div>

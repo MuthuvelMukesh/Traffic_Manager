@@ -11,6 +11,7 @@ export default function MapPage() {
   const { intersections } = useTrafficData();
   const [selectedIntersection, setSelectedIntersection] = useState<Intersection | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
+  const [zoneFilter, setZoneFilter] = useState("all");
   const [layers, setLayers] = useState({
     trafficDensity: true,
     cameraCoverage: false,
@@ -18,9 +19,12 @@ export default function MapPage() {
   });
 
   const filteredIntersections = useMemo(() => {
-    if (statusFilter === "all") return intersections;
-    return intersections.filter((i) => i.status === statusFilter);
-  }, [intersections, statusFilter]);
+    return intersections.filter((i) => {
+      if (statusFilter !== "all" && i.status !== statusFilter) return false;
+      if (zoneFilter !== "all" && i.zone !== zoneFilter) return false;
+      return true;
+    });
+  }, [intersections, statusFilter, zoneFilter]);
 
   const handleIntersectionSelect = (intersection: Intersection) => {
     setSelectedIntersection(intersection);
@@ -49,6 +53,8 @@ export default function MapPage() {
         onSearchSelect={handleIntersectionSelect}
         statusFilter={statusFilter}
         onStatusFilterChange={setStatusFilter}
+        zoneFilter={zoneFilter}
+        onZoneFilterChange={setZoneFilter}
         layers={layers}
         onLayerToggle={handleLayerToggle}
       />
