@@ -68,11 +68,19 @@ function ToggleSwitch({ enabled, onChange, label, description, disabled }: Toggl
   );
 }
 
-export default function AlertPreferences() {
-  const [settings, setSettings] = useState<AlertSettings>(defaultSettings);
+interface AlertPreferencesProps {
+  settings?: AlertSettings;
+  onChange?: (s: AlertSettings) => void;
+}
+
+export default function AlertPreferences({ settings: controlledSettings, onChange }: AlertPreferencesProps) {
+  const [localSettings, setLocalSettings] = useState<AlertSettings>(defaultSettings);
+  const settings = controlledSettings ?? localSettings;
 
   const update = (partial: Partial<AlertSettings>) => {
-    setSettings((prev) => ({ ...prev, ...partial }));
+    const updated = { ...settings, ...partial };
+    setLocalSettings(updated);
+    onChange?.(updated);
   };
 
   return (
