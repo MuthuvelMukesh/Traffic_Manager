@@ -2,7 +2,7 @@
 
 import React from "react";
 import dynamic from "next/dynamic";
-import type { Intersection } from "@/types";
+import type { Intersection, EmergencyVehicle } from "@/types";
 
 const TrafficMapContent = dynamic(() => import("./TrafficMapContent"), {
   ssr: false,
@@ -26,18 +26,24 @@ interface TrafficMapProps {
   intersections: Intersection[];
   onIntersectionSelect: (intersection: Intersection) => void;
   selectedId?: string;
+  layers?: { trafficDensity: boolean; cameraCoverage: boolean; emergencyRoutes: boolean };
+  emergencyVehicles?: EmergencyVehicle[];
 }
 
 export default function TrafficMap({
   intersections,
   onIntersectionSelect,
   selectedId,
+  layers,
+  emergencyVehicles = [],
 }: TrafficMapProps) {
   return (
     <TrafficMapContent
       intersections={intersections}
       onIntersectionSelect={onIntersectionSelect}
       selectedId={selectedId}
+      layers={layers}
+      emergencyVehicles={emergencyVehicles}
     />
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import DateRangeSelector from "@/components/analytics/DateRangeSelector";
 import MetricCard from "@/components/analytics/MetricCard";
 import TrafficVolumeByHour from "@/components/analytics/TrafficVolumeByHour";
@@ -22,31 +22,6 @@ const analyticsTabs = [
   { id: "zones",        label: "Zone Stats",    icon: <Map className="h-4 w-4" /> },
 ];
 
-function handleExport(activeTab: string) {
-  if (activeTab === "predictive") {
-    exportToCSV(
-      predictiveTraffic.map((p) => ({
-        Hour: p.hour,
-        Actual: p.actual ?? "",
-        Predicted: p.predicted,
-        "Upper Bound": p.upperBound,
-        "Lower Bound": p.lowerBound,
-        "Confidence %": p.confidence,
-      })),
-      "traffic-predictions.csv"
-    );
-  } else {
-    exportToCSV(
-      trafficVolume.map((v) => ({
-        Hour: v.hour,
-        Volume: v.volume,
-        "Previous Volume": v.previousVolume ?? "",
-      })),
-      "traffic-volume.csv"
-    );
-  }
-}
-
 const congestedIntersections = [
   { name: "5th Ave & 42nd St", avgWaitTime: 68, trend: 12 },
   { name: "Broadway & 34th St", avgWaitTime: 55, trend: 8 },
@@ -63,8 +38,53 @@ const performingIntersections = [
   { name: "Madison & 50th St", avgWaitTime: 20, trend: -6 },
 ];
 
+// Scale factors per preset — simulates different time-window averages
+const PRESET_SCALE: Record<string, number> = {
+  today: 1.0,
+  "7d": 0.94,
+  "30d": 0.97,
+  "90d": 1.04,
+  custom: 1.0,
+};
+
 export default function AnalyticsPage() {
   const [activeTab, setActiveTab] = useState("overview");
+  const [datePreset, setDatePreset] = useState("30d");
+
+  const filteredVolume = useMemo(() => {
+    const scale = PRESET_SCALE[datePreset] ?? 1.0;
+    return trafficVolume.map((point) => ({
+      ...point,
+      volume: Math.round(point.volume * scale),
+      previousVolume: Math.round(point.previousVolume * scale),
+    }));
+  }, [datePreset]);
+
+  const handleExport = () => {
+    if (activeTab === "predictive") {
+      exportToCSV(
+        predictiveTraffic.map((p) => ({
+          Hour: p.hour,
+          Actual: p.actual ?? "",
+          Predicted: p.predicted,
+          "Upper Bound": p.upperBound,
+          "Lower Bound": p.lowerBound,
+          "Confidence %": p.confidence,
+        })),
+        `traffic-predictions-${Date.now()}.csv`
+      );
+      return;
+    }
+
+    exportToCSV(
+      filteredVolume.map((v) => ({
+        Hour: v.hour,
+        Volume: v.volume,
+        "Previous Volume": v.previousVolume ?? "",
+      })),
+      `traffic-volume-${datePreset}-${Date.now()}.csv`
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -79,7 +99,7 @@ export default function AnalyticsPage() {
           </p>
         </div>
         <button
-          onClick={() => handleExport(activeTab)}
+          onClick={handleExport}
           className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-4 py-2 text-sm font-medium text-gray-300 hover:bg-white/[0.06] hover:text-gray-200 transition-all duration-200"
         >
           <Download className="h-4 w-4" />
@@ -88,7 +108,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Date range selector */}
-      <DateRangeSelector />
+      <DateRangeSelector onPresetChange={(p) => setDatePreset(p)} />
 
       {/* Tabs */}
       <div className="border-b border-white/[0.06]">
@@ -139,7 +159,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Traffic volume chart */}
-          <TrafficVolumeByHour />
+          <TrafficVolumeByHour data={filteredVolume} />
 
           {/* Intersections rankings */}
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-5">
@@ -166,7 +186,7 @@ export default function AnalyticsPage() {
 
       {activeTab === "traffic" && (
         <div className="space-y-6">
-          <TrafficVolumeByHour />
+          <TrafficVolumeByHour data={filteredVolume} />
           <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
             <MetricCard
               label="Peak Hour Volume"

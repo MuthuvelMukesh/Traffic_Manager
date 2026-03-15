@@ -1,11 +1,7 @@
 import { clsx, type ClassValue } from "clsx";
 
 export function cn(...inputs: ClassValue[]) {
-  // Simple implementation without clsx dependency
-  return inputs
-    .flat()
-    .filter((x) => typeof x === "string" && x.length > 0)
-    .join(" ");
+  return clsx(inputs);
 }
 
 export function formatNumber(num: number): string {

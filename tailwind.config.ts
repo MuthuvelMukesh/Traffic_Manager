@@ -57,9 +57,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Poppins", "system-ui", "sans-serif"],
-        mono: ["JetBrains Mono", "monospace"],
+        sans: ["var(--font-inter)", "system-ui", "sans-serif"],
+        display: ["var(--font-poppins)", "system-ui", "sans-serif"],
+        mono: ["var(--font-jetbrains)", "monospace"],
       },
       spacing: {
         "18": "4.5rem",

@@ -1,7 +1,8 @@
 "use client";
 
 import React from "react";
-import { trafficVolume } from "@/data/trafficVolume";
+import { trafficVolume as defaultData } from "@/data/trafficVolume";
+import type { TrafficVolumePoint } from "@/types";
 import {
   BarChart,
   Bar,
@@ -13,12 +14,17 @@ import {
   Legend,
 } from "recharts";
 
-export default function TrafficVolumeByHour() {
+interface TrafficVolumeByHourProps {
+  data?: TrafficVolumePoint[];
+  title?: string;
+}
+
+export default function TrafficVolumeByHour({ data = defaultData, title = "Traffic Volume by Hour" }: TrafficVolumeByHourProps) {
   return (
     <div className="glass rounded-2xl p-5 shadow-card">
       <div className="mb-4 flex items-center justify-between">
         <h3 className="text-lg font-semibold text-gray-100">
-          Traffic Volume by Hour
+          {title}
         </h3>
         <span className="text-sm text-gray-500">Vehicles per hour</span>
       </div>
@@ -26,7 +32,7 @@ export default function TrafficVolumeByHour() {
       <div className="h-80 w-full">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart
-            data={trafficVolume}
+            data={data}
             margin={{ top: 5, right: 10, left: 10, bottom: 5 }}
           >
             <defs>

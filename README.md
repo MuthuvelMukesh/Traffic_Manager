@@ -23,6 +23,7 @@ An **AI-Driven Intelligent Traffic Management System** built with Next.js 14. De
 
 Traffic Control Center is a full-featured dashboard application that simulates a smart city traffic management platform. It provides:
 
+- Authentication-protected access with session persistence
 - A real-time command center with live KPIs and alerts
 - Interactive maps with intersection markers and layer controls
 - Emergency vehicle tracking with signal preemption corridors
@@ -31,6 +32,8 @@ Traffic Control Center is a full-featured dashboard application that simulates a
 - Role-based user management with admin, operator, engineer, and viewer roles
 
 > **Note:** All traffic data is currently simulated using mock datasets and hooks. It updates every 5 seconds to mimic live system behavior.
+>
+> **Persistence:** Authentication session, AI configuration, and alert preferences are stored in `localStorage`.
 
 ---
 
@@ -38,13 +41,15 @@ Traffic Control Center is a full-featured dashboard application that simulates a
 
 | Feature | Description |
 |---|---|
+| Authentication | Login-gated app shell with role-based demo users and persisted session |
 | Real-Time Traffic Monitoring | Live KPIs — congestion levels, average wait times, system efficiency |
-| Interactive Map | Leaflet-based map with intersection markers, status filters, and layer toggles |
-| Signal Control | View and override signal timing per-intersection using manual override modal |
+| Interactive Map | Leaflet-based map with status filters and working layers: traffic density, camera coverage, emergency routes |
+| Signal Control | View and override signal timing per-intersection with toast feedback |
 | Emergency Vehicle Preemption | Track vehicles, auto-clear corridors, calculate ETA and time saved |
-| Multi-Severity Alerts | Critical, warning, info, and emergency alerts with acknowledge/dismiss actions |
-| Analytics & Reports | Hourly traffic trends, top congested intersections, performance benchmarks |
-| AI Configuration | Tunable ML parameters — confidence threshold, aggressiveness, detection methods |
+| Multi-Severity Alerts | Critical, warning, info, emergency alerts + interactive notification panel (read/dismiss/mark all) |
+| Analytics & Reports | Hourly traffic trends, top congested intersections, performance benchmarks, CSV export |
+| AI Configuration | Tunable AI parameters — confidence threshold, aggressiveness, detection methods |
+| Signal Timing Configuration | Zone-based signal timing panel with mode toggles and cycle summary |
 | User Management | RBAC with Admin, Operator, Engineer, and Viewer roles |
 | Environmental Dashboard | Real-time CO₂ reduction, fuel savings, and time savings metrics |
 | System Health | Monitor signal controller uptime, API status, and camera availability |
@@ -58,6 +63,7 @@ Traffic Control Center is a full-featured dashboard application that simulates a
 | Framework | Next.js 14.2 (App Router) |
 | Language | TypeScript 5 |
 | UI Styling | Tailwind CSS 3.4 (dark theme, glass morphism, glow effects) |
+| Fonts | `next/font` (Inter, Poppins, JetBrains Mono) |
 | Icons | Lucide React 0.577 |
 | Charts | Recharts 3.8 |
 | Maps | Leaflet 1.9 + React Leaflet 4.2 |
@@ -74,6 +80,7 @@ Traffic_Manager/
 ├── src/
 │   ├── app/                      # Next.js App Router pages + root layout
 │   │   ├── layout.tsx            # Root layout (AppShell wrapper)
+│   │   ├── login/page.tsx        # Login page (/login)
 │   │   ├── page.tsx              # Dashboard (/)
 │   │   ├── map/page.tsx          # Live Map (/map)
 │   │   ├── intersections/page.tsx # Intersections (/intersections)
@@ -92,6 +99,7 @@ Traffic_Manager/
 │   │   └── ui/                   # Reusable UI atoms (Button, Card, Modal, etc.)
 │   │
 │   ├── hooks/                    # Custom React hooks for data simulation
+│   ├── contexts/                 # React context providers (auth)
 │   ├── types/                    # TypeScript interface and type definitions
 │   ├── data/                     # Mock data (intersections, alerts, vehicles, users)
 │   └── lib/                      # Utilities, constants, and helpers
@@ -107,6 +115,12 @@ Traffic_Manager/
 
 ## Pages & Routes
 
+### `/login` — Authentication
+Login entry point for the dashboard shell:
+- Email/password demo authentication
+- Quick-fill demo credentials
+- Session persistence via `localStorage`
+
 ### `/` — Dashboard
 The central command center. Displays:
 - KPI cards (active intersections, avg wait time, efficiency %)
@@ -120,8 +134,9 @@ The central command center. Displays:
 Interactive Leaflet map showing all intersections across the city:
 - Color-coded markers by traffic status (optimal / moderate / heavy / emergency)
 - Status filter buttons
-- Layer toggles: Traffic Density, Camera Coverage, Emergency Routes
+- Working layer toggles: Traffic Density, Camera Coverage, Emergency Routes
 - Intersection search with auto-center
+- Active emergency vehicle markers (when emergency route layer is enabled)
 - Side panel with full intersection details on marker click
 
 ### `/intersections` — Intersection Management
@@ -130,14 +145,16 @@ List-based management view:
 - Status indicators and metric previews
 - Detail panel: signal states, camera feeds, queue lengths
 - **Manual Override Modal** for adjusting NS/EW signal timing
+- Success toast when override is applied
 
 ### `/analytics` — Analytics & Reports
 Multi-tab analytics dashboard:
-- Date range selector
+- Date preset selector wired to chart data
 - Metric cards (throughput, avg wait time, AI decision accuracy)
 - Hourly traffic volume chart
 - Top intersections by congestion
 - Environmental summary (CO₂, fuel, time saved)
+- CSV report export
 
 ### `/emergency` — Emergency Vehicle Tracking
 Real-time emergency coordination:
@@ -145,13 +162,16 @@ Real-time emergency coordination:
 - Preemption status per intersection along the route
 - Metrics panel: total preemptions, avg time saved, success rate
 - Historical log of completed emergency assignments
+- Working history filter (all/ambulance/fire/police) and view-all toggle
 
 ### `/settings` — Settings & Configuration
 System configuration split into tabs:
 - **AI Configuration**: Confidence threshold, update frequency, optimization aggressiveness, detection methods (visual/audio/GPS/radio), preemption distance, predictive modeling
+- **Signal Timing**: Zone-level NS/EW timing bounds, pedestrian timings, peak-hour extension, and mode toggles
 - **Alert Preferences**: Per-severity notification toggles and thresholds
 - **User Management**: List users, manage roles and permissions
 - **System Health**: Controller uptime, API connectivity, camera status
+- Save/Reset actions with persisted settings
 
 ---
 
@@ -171,7 +191,7 @@ System configuration split into tabs:
 | Component | Description |
 |---|---|
 | `TrafficMap` | Dynamically loaded (SSR-disabled) Leaflet map container |
-| `TrafficMapContent` | Renders intersection markers and handles click events |
+| `TrafficMapContent` | Renders intersection markers, layer overlays, and emergency vehicle markers |
 | `MapControls` | Search bar, filter buttons, layer toggles |
 | `IntersectionDetailPanel` | Slide-in panel with intersection details |
 
@@ -181,7 +201,7 @@ System configuration split into tabs:
 | `IntersectionList` | Searchable list with status dots, metrics, and hover effects |
 | `IntersectionDetail` | Full detail view — signals, cameras, queue lengths, AI status |
 | `SignalStatus` | Real-time NS/EW signal phase indicators with countdowns |
-| `CameraFeedGrid` | Multi-directional camera view (placeholder feed images) |
+| `CameraFeedGrid` | Multi-directional camera view with animated mock feed and offline state |
 | `ManualOverrideModal` | Dialog to manually adjust green/yellow phase durations |
 
 ### Analytics
@@ -189,7 +209,7 @@ System configuration split into tabs:
 |---|---|
 | `DateRangeSelector` | Date range picker control |
 | `MetricCard` | Analytics metric display with trend and benchmark |
-| `TrafficVolumeByHour` | 24-hour bar/line chart for traffic flow analysis |
+| `TrafficVolumeByHour` | 24-hour chart with externally supplied filtered dataset support |
 | `TopIntersections` | Ranked table of highest-congestion intersections |
 | `EnvironmentalSummary` | Aggregated environmental impact across the system |
 
@@ -204,6 +224,7 @@ System configuration split into tabs:
 | Component | Description |
 |---|---|
 | `AIConfiguration` | Form panel for AI model parameters |
+| `SignalTiming` | Zone-based timing controls and cycle summary |
 | `AlertPreferences` | Toggle-based notification preference settings |
 | `UserManagement` | User list with role badges and management controls |
 | `SystemHealth` | Health status grid for signal controllers, APIs, cameras |
@@ -213,7 +234,8 @@ System configuration split into tabs:
 |---|---|
 | `AppShell` | Root layout wrapper composing Sidebar + TopBar + main content |
 | `Sidebar` | Navigation menu with icon links to all pages |
-| `TopBar` | Header with system status indicator and notification bell |
+| `TopBar` | Header with system status, notification trigger, and user menu |
+| `NotificationPanel` | Read/dismiss notifications, mark-all-read, severity-aware feed |
 
 ### UI Primitives (`/components/ui`)
 `Button` · `Card` · `Modal` · `Badge` · `Tabs` · `Toggle` · `Tooltip` · `Select` · `ProgressBar` · `DataTable` · `Skeleton`
@@ -239,7 +261,7 @@ type EmergencyVehicleType = "ambulance" | "fire" | "police"
 - **`Alert`** — ID, severity, title, description, timestamp, acknowledged status, actionType
 - **`EmergencyVehicle`** — Type, callSign, origin/destination, coordinates, routeProgress (0–100), intersectionsCleared, ETA, timeSaved, active flag
 - **`User`** — ID, name, email, role, lastActive, avatar URL
-- **`AIConfig`** — confidenceThreshold, updateFrequency, aggressiveness, detectionMethods array, preemptionDistance, predictiveModeling flag, retrainingInterval
+- **`AIConfig`** — confidenceThreshold, updateFrequency, optimizationAggressiveness, detection toggles, preemptionDistance, predictiveModeling flags, retrainingInterval
 - **`EnvironmentalMetrics`** — co2Reduced (kg), fuelSaved (L), timeSaved (hrs), trend values
 
 ---
@@ -252,6 +274,12 @@ type EmergencyVehicleType = "ambulance" | "fire" | "police"
 | `useAlerts` | Manages alerts state — acknowledge and dismiss operations, tracks unacknowledged/critical/emergency counts. |
 | `useEmergencyVehicles` | Simulates vehicle progress along routes, updates ETA, tracks completed preemptions and average time saved. |
 | `useNotifications` | Manages notification read/unread state — mark individual or all as read, dismiss, track unread count. |
+
+### Context
+
+| Context | Description |
+|---|---|
+| `AuthContext` | Demo authentication provider with login/logout and persisted user session |
 
 ---
 
@@ -272,6 +300,15 @@ cd Traffic_Manager
 # Install dependencies
 npm install
 ```
+
+### Demo Login Credentials
+
+Use any configured demo account:
+
+- `admin@trafficcontrol.nyc.gov` / `admin123`
+- `operator@trafficcontrol.nyc.gov` / `operator123`
+- `engineer@trafficcontrol.nyc.gov` / `engineer123`
+- `viewer@trafficcontrol.nyc.gov` / `viewer123`
 
 ### Development Server
 

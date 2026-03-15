@@ -17,9 +17,14 @@ import { APP_NAME } from "@/lib/constants";
 interface TopBarProps {
   notificationCount: number;
   onNotificationClick: () => void;
+  notificationOpen?: boolean;
+  notificationPanel?: React.ReactNode;
+  user?: { name: string; email?: string; role: string; initials: string } | null;
+  onLogout?: () => void;
 }
 
-export default function TopBar({ notificationCount, onNotificationClick }: TopBarProps) {
+export default function TopBar({ notificationCount, onNotificationClick, notificationOpen = false, notificationPanel }: TopBarProps) {
+  export default function TopBar({ notificationCount, onNotificationClick, notificationOpen = false, notificationPanel, user, onLogout }: TopBarProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [userMenuOpen, setUserMenuOpen] = useState(false);
@@ -116,18 +121,21 @@ export default function TopBar({ notificationCount, onNotificationClick }: TopBa
         </div>
 
         {/* Notifications */}
-        <button
-          onClick={onNotificationClick}
-          className="relative p-2.5 text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] rounded-xl transition-all duration-200"
-        >
-          <Bell className="w-[18px] h-[18px]" />
-          {notificationCount > 0 && (
-            <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-danger text-white text-[10px] font-bold rounded-full"
-              style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)' }}>
-              {notificationCount > 9 ? "9+" : notificationCount}
-            </span>
-          )}
-        </button>
+        <div className="relative">
+          <button
+            onClick={onNotificationClick}
+            className={`relative p-2.5 text-gray-400 hover:text-gray-200 hover:bg-white/[0.04] rounded-xl transition-all duration-200 ${notificationOpen ? "bg-white/[0.06] text-gray-200" : ""}`}
+          >
+            <Bell className="w-[18px] h-[18px]" />
+            {notificationCount > 0 && (
+              <span className="absolute top-1.5 right-1.5 flex items-center justify-center min-w-[18px] h-[18px] px-1 bg-danger text-white text-[10px] font-bold rounded-full"
+                style={{ boxShadow: '0 0 10px rgba(239, 68, 68, 0.4)' }}>
+                {notificationCount > 9 ? "9+" : notificationCount}
+              </span>
+            )}
+          </button>
+          {notificationPanel}
+        </div>
 
         {/* Divider */}
         <div className="w-px h-6 bg-white/[0.08] mx-1" />
@@ -139,11 +147,11 @@ export default function TopBar({ notificationCount, onNotificationClick }: TopBa
             className="flex items-center gap-2.5 p-1.5 hover:bg-white/[0.04] rounded-xl transition-all duration-200"
           >
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-brand-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-              JS
+              {user?.initials ?? "??"}
             </div>
             <div className="hidden lg:block text-left">
-              <span className="text-sm font-medium text-gray-200 block leading-tight">John Smith</span>
-              <span className="text-[10px] text-gray-500">Administrator</span>
+              <span className="text-sm font-medium text-gray-200 block leading-tight">{user?.name ?? "Guest"}</span>
+              <span className="text-[10px] text-gray-500 capitalize">{user?.role ?? ""}</span>
             </div>
             <ChevronDown className="w-3.5 h-3.5 text-gray-500 hidden lg:block" />
           </button>
@@ -151,8 +159,8 @@ export default function TopBar({ notificationCount, onNotificationClick }: TopBa
           {userMenuOpen && (
             <div className="absolute right-0 top-full mt-2 w-52 glass-strong rounded-xl shadow-glass py-1 animate-scale-in overflow-hidden">
               <div className="px-4 py-3 border-b border-white/[0.06]">
-                <p className="text-sm font-semibold text-gray-200">John Smith</p>
-                <p className="text-xs text-gray-400 mt-0.5">john@traffic.nyc.gov</p>
+                <p className="text-sm font-semibold text-gray-200">{user?.name ?? "Guest"}</p>
+                <p className="text-xs text-gray-400 mt-0.5 capitalize">{user?.role}</p>
               </div>
               <Link href="/settings" className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/[0.04] transition-colors" onClick={() => setUserMenuOpen(false)}>
                 <Settings className="w-4 h-4 text-gray-400" />
@@ -160,7 +168,7 @@ export default function TopBar({ notificationCount, onNotificationClick }: TopBa
               </Link>
               <button className="flex items-center gap-2.5 px-4 py-2.5 text-sm text-gray-300 hover:bg-white/[0.04] w-full text-left transition-colors">
                 <LogOut className="w-4 h-4 text-gray-400" />
-                Sign Out
+                <span onClick={() => { setUserMenuOpen(false); onLogout?.(); }}>Sign Out</span>
               </button>
             </div>
           )}

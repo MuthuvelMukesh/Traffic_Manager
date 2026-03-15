@@ -1,14 +1,23 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import ActiveEmergencyCard from "@/components/emergency/ActiveEmergencyCard";
 import EmergencyHistory from "@/components/emergency/EmergencyHistory";
 import EmergencyMetrics from "@/components/emergency/EmergencyMetrics";
 import { useEmergencyVehicles } from "@/hooks/useEmergencyVehicles";
-import { Siren, Filter } from "lucide-react";
+import { Siren, Filter, ChevronDown, X } from "lucide-react";
 
 export default function EmergencyPage() {
   const { activeVehicles, completedVehicles, stats } = useEmergencyVehicles();
+  const [filterType, setFilterType] = useState<"all" | "ambulance" | "fire" | "police">("all");
+  const [filterOpen, setFilterOpen] = useState(false);
+  const HISTORY_LIMIT = 5;
+  const [showAll, setShowAll] = useState(false);
+
+  const filteredHistory = completedVehicles.filter(
+    (v) => filterType === "all" || v.type === filterType
+  );
+  const displayedHistory = showAll ? filteredHistory : filteredHistory.slice(0, HISTORY_LIMIT);
 
   return (
     <div className="space-y-8">
@@ -60,16 +69,56 @@ export default function EmergencyPage() {
             Recent History (Last 24 Hours)
           </h2>
           <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all duration-200">
-              <Filter className="h-4 w-4" />
-              Filter
-            </button>
-            <button className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all duration-200">
+            <div className="relative">
+              <button
+                onClick={() => setFilterOpen(!filterOpen)}
+                className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all duration-200"
+              >
+                <Filter className="h-4 w-4" />
+                {filterType === "all" ? "Filter" : filterType.charAt(0).toUpperCase() + filterType.slice(1)}
+                {filterType !== "all" && (
+                  <span
+                    onClick={(e) => { e.stopPropagation(); setFilterType("all"); }}
+                    className="ml-1 rounded-full hover:text-white"
+                  >
+                    <X className="h-3 w-3" />
+                  </span>
+                )}
+                <ChevronDown className={`h-3.5 w-3.5 transition-transform ${filterOpen ? "rotate-180" : ""}`} />
+              </button>
+              {filterOpen && (
+                <div className="absolute right-0 top-full mt-1 w-36 rounded-xl glass-strong border border-white/[0.08] shadow-glass py-1 z-10 animate-scale-in">
+                  {(["all", "ambulance", "fire", "police"] as const).map((type) => (
+                    <button
+                      key={type}
+                      onClick={() => { setFilterType(type); setFilterOpen(false); }}
+                      className={`flex w-full items-center px-3 py-2 text-sm capitalize transition-colors ${
+                        filterType === type
+                          ? "text-brand-400 bg-brand-500/10"
+                          : "text-gray-300 hover:bg-white/[0.04]"
+                      }`}
+                    >
+                      {type === "all" ? "All Types" : type}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+            {filteredHistory.length > HISTORY_LIMIT && (
+            <button
+              onClick={() => setShowAll(!showAll)}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 text-sm font-medium text-gray-400 hover:bg-white/[0.06] hover:text-gray-300 transition-all duration-200">
               View All
             </button>
+            )}
           </div>
         </div>
-        <EmergencyHistory vehicles={completedVehicles} />
+        <EmergencyHistory vehicles={displayedHistory} />
+        {!showAll && filteredHistory.length > HISTORY_LIMIT && (
+          <p className="mt-2 text-center text-xs text-gray-600">
+            Showing {HISTORY_LIMIT} of {filteredHistory.length} — click View All to see more
+          </p>
+        )}
       </section>
 
       {/* Performance Metrics section */}

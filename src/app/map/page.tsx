@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from "react";
 import { useTrafficData } from "@/hooks/useTrafficData";
+import { useEmergencyVehicles } from "@/hooks/useEmergencyVehicles";
 import TrafficMap from "@/components/map/TrafficMap";
 import MapControls from "@/components/map/MapControls";
 import IntersectionDetailPanel from "@/components/map/IntersectionDetailPanel";
@@ -9,6 +10,7 @@ import type { Intersection } from "@/types";
 
 export default function MapPage() {
   const { intersections } = useTrafficData();
+  const { vehicles } = useEmergencyVehicles();
   const [selectedIntersection, setSelectedIntersection] = useState<Intersection | null>(null);
   const [statusFilter, setStatusFilter] = useState("all");
   const [zoneFilter, setZoneFilter] = useState("all");
@@ -63,6 +65,8 @@ export default function MapPage() {
           intersections={filteredIntersections}
           onIntersectionSelect={handleIntersectionSelect}
           selectedId={currentSelected?.id}
+          layers={layers}
+          emergencyVehicles={vehicles}
         />
         {currentSelected && (
           <IntersectionDetailPanel

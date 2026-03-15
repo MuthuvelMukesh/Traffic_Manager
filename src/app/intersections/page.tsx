@@ -6,7 +6,7 @@ import IntersectionList from "@/components/intersections/IntersectionList";
 import IntersectionDetail from "@/components/intersections/IntersectionDetail";
 import ManualOverrideModal from "@/components/intersections/ManualOverrideModal";
 import type { Intersection } from "@/types";
-import { GitBranch } from "lucide-react";
+import { GitBranch, CheckCircle, X } from "lucide-react";
 
 export default function IntersectionsPage() {
   const { intersections } = useTrafficData();
@@ -14,6 +14,12 @@ export default function IntersectionsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState("status");
   const [overrideModalOpen, setOverrideModalOpen] = useState(false);
+  const [toast, setToast] = useState<{ message: string; intersectionName: string } | null>(null);
+
+  const showToast = (message: string, intersectionName: string) => {
+    setToast({ message, intersectionName });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   const handleSelect = (intersection: Intersection) => {
     setSelectedIntersection(intersection);
@@ -25,9 +31,12 @@ export default function IntersectionsPage() {
     ewGreen: number;
     duration: string;
   }) => {
-    // In a real app, this would send the override command to the server
-    console.log("Override confirmed:", data);
+    const name = currentSelected?.name ?? "Unknown";
     setOverrideModalOpen(false);
+    showToast(
+      `Manual override applied: NS ${data.nsGreen}s / EW ${data.ewGreen}s for ${data.duration}`,
+      name
+    );
   };
 
   // Keep selected intersection data fresh from live updates
@@ -83,6 +92,25 @@ export default function IntersectionsPage() {
           intersectionName={currentSelected.name}
           onConfirm={handleOverrideConfirm}
         />
+      )}
+
+      {/* Toast notification */}
+      {toast && (
+        <div className="fixed bottom-6 right-6 z-50 animate-slide-up">
+          <div className="flex items-start gap-3 rounded-2xl glass-strong border border-success/30 bg-success/10 px-4 py-3 shadow-glass-lg min-w-[320px] max-w-sm">
+            <CheckCircle className="h-5 w-5 text-success flex-shrink-0 mt-0.5" />
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-gray-100">{toast.intersectionName}</p>
+              <p className="text-xs text-gray-400 mt-0.5">{toast.message}</p>
+            </div>
+            <button
+              onClick={() => setToast(null)}
+              className="text-gray-500 hover:text-gray-300 transition-colors flex-shrink-0"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );
